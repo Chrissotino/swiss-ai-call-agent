@@ -240,15 +240,9 @@ swiss-ai-call-agent/
 
 ---
 
-## 📄 License
-
-MIT License
-
----
-
 ## 👤 Author
 
-**Chris Sotino** — AI Architect
+**Chris**  AI Architect
 - LinkedIn: [linkedin.com/in/Chrissotino](https://linkedin.com/in/Chrissotino)
 - GitHub: [@Chrissotino](https://github.com/Chrissotino)
 
