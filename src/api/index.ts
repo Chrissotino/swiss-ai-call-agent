@@ -43,6 +43,18 @@ interface CallRecord {
 
 const activeCalls = new Map<string, CallRecord>();
 
+const getSingleParam = (value: string | string[] | undefined): string | null => {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (Array.isArray(value) && value.length > 0) {
+    return value[0];
+  }
+
+  return null;
+};
+
 // ─────────────────────────────────────────────────────────────
 // Routes
 // ─────────────────────────────────────────────────────────────
@@ -89,8 +101,16 @@ app.post("/calls/start", async (req: Request, res: Response) => {
 // Process a new utterance and get AI decision
 app.post("/calls/:callId/utterance", async (req: Request, res: Response) => {
   try {
-    const { callId } = req.params;
+    const callId = getSingleParam(req.params.callId);
     const { role, text } = req.body;
+
+    if (!callId) {
+      return res.status(400).json({ error: "callId is required" });
+    }
+
+    if (!["agent", "customer"].includes(role) || typeof text !== "string" || text.trim().length === 0) {
+      return res.status(400).json({ error: "role must be 'agent' or 'customer' and text must be a non-empty string" });
+    }
 
     const call = activeCalls.get(callId);
     if (!call) {
@@ -148,7 +168,10 @@ app.post("/calls/:callId/utterance", async (req: Request, res: Response) => {
 
 // Get call details
 app.get("/calls/:callId", (req: Request, res: Response) => {
-  const { callId } = req.params;
+  const callId = getSingleParam(req.params.callId);
+  if (!callId) {
+    return res.status(400).json({ error: "callId is required" });
+  }
   const call = activeCalls.get(callId);
   if (!call) {
     return res.status(404).json({ error: "Call not found" });
@@ -158,7 +181,10 @@ app.get("/calls/:callId", (req: Request, res: Response) => {
 
 // End a call
 app.post("/calls/:callId/end", (req: Request, res: Response) => {
-  const { callId } = req.params;
+  const callId = getSingleParam(req.params.callId);
+  if (!callId) {
+    return res.status(400).json({ error: "callId is required" });
+  }
   const call = activeCalls.get(callId);
   if (!call) {
     return res.status(404).json({ error: "Call not found" });
@@ -220,8 +246,9 @@ app.post("/webhooks/twilio/inbound", async (req: Request, res: Response) => {
 
 // Process speech input from Twilio
 app.post("/webhooks/twilio/speech", async (req: Request, res: Response) => {
-  const { CallSid, SpeechResult } = req.body;
-  const call = activeCalls.get(CallSid);
+  const CallSid = getSingleParam(req.body.CallSid);
+  const SpeechResult = getSingleParam(req.body.SpeechResult);
+  const call = CallSid ? activeCalls.get(CallSid) : undefined;
 
   if (!call || !SpeechResult) {
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
