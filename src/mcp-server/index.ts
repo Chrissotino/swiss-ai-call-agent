@@ -2,6 +2,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { makeDecision, shouldEscalate, CallContext } from "../decision-engine/engine.js";
+import { lookupCustomerInBexio } from "../integrations/bexio.js";
+import { lookupCustomerInMicrosoft } from "../integrations/microsoft.js";
+import { lookupCustomerInHubspot } from "../integrations/hubspot.js";
 
 // ─────────────────────────────────────────────────────────────
 // MCP Server — Swiss AI Call Agent
@@ -80,21 +83,26 @@ server.tool(
   "Look up customer data from the CRM by phone number or email",
   {
     identifier: z.string().describe("Phone number (+41...) or email address"),
+    provider: z.enum(["bexio", "microsoft", "hubspot"]).default("bexio").describe("CRM provider"),
   },
-  async ({ identifier }) => {
-    // TODO: Replace with real CRM integration (Bexio, Abacus, Dynamics, etc.)
-    const mockData = {
-      found: true,
-      name: "Max Mustermann",
-      company: "Mustermann AG",
-      language: "de-CH",
-      openTickets: 1,
-      lastContact: "2025-01-15",
-      notes: "Prefers callback between 08:00 and 12:00",
+  async ({ identifier, provider }) => {
+    let customer;
+
+    if (provider === "microsoft") {
+      customer = await lookupCustomerInMicrosoft(identifier);
+    } else if (provider === "hubspot") {
+      customer = await lookupCustomerInHubspot(identifier);
+    } else {
+      customer = await lookupCustomerInBexio(identifier);
+    }
+
+    const response = {
+      provider,
+      ...customer,
     };
 
     return {
-      content: [{ type: "text", text: JSON.stringify(mockData) }],
+      content: [{ type: "text", text: JSON.stringify(response) }],
     };
   }
 );
