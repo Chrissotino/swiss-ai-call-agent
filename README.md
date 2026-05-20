@@ -1,4 +1,4 @@
-# 🇨🇭 Swiss AI Call Agent
+# Swiss AI Call Agent (CH)
 
 > Enterprise-grade AI Call Agent for the Swiss market — inbound & outbound calls, multilingual (DE/FR/IT), MCP architecture, Claude AI decision engine, real-time dashboard.
 
